@@ -1,14 +1,22 @@
--- Disable netrw entirely
+-- Set leader key first
+vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
+vim.g.mapleader = " "
+
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-    
--- Tabs & Indentation
-vim.opt.expandtab = true
+
+vim.opt.expandtab = false
 vim.opt.shiftwidth = 4
 vim.opt.softtabstop = 4
 vim.opt.tabstop = 4
 
--- Lazy.nvim Bootstrap
+if vim.fn.executable("fdfind") == 0 then
+    vim.notify(
+        "WARNING: 'fdfind' (fd-find) is not installed or not found in your PATH.\nFZF file search will not work until you install it.",
+        vim.log.levels.WARN
+    )
+end
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
@@ -22,35 +30,124 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Plugins
 local plugins = {
-    {
-        "iamcco/markdown-preview.nvim",
-        ft = { "markdown" },
-        build = "cd app && npm install",
-        init = function()
-            vim.g.mkdp_filetypes = { "markdown" }
-        end,
-    },
     { "wakatime/vim-wakatime", lazy = false },
     { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
-        "shaunsingh/nord.nvim",
+        "ellisonleao/gruvbox.nvim",
         lazy = false,
         priority = 1000,
         config = function()
-            vim.cmd("colorscheme nord")
+            require("gruvbox").setup({contrast = "hard"})
+            vim.o.background = "dark"
+            vim.cmd("colorscheme gruvbox")
         end,
     },
     {
         "folke/tokyonight.nvim",
-        lazy = false,
+        lazy = true,
         priority = 1000,
-        opts = {},
     },
-    { "nvim-telescope/telescope.nvim", tag = '0.1.8', dependencies = { "nvim-lua/plenary.nvim" } },
-    { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-    { "nvim-telescope/telescope-ui-select.nvim" },
+    {
+        "shaunsingh/nord.nvim",
+        lazy = true,
+        priority = 1000,
+    },
+    {
+        'notjedi/nvim-rooter.lua',
+        config = function()
+            require('nvim-rooter').setup()
+        end
+    },
+    -- Add Telescope
+    {
+        'nvim-telescope/telescope.nvim',
+        dependencies = { 
+            'nvim-lua/plenary.nvim',
+            'nvim-telescope/telescope-ui-select.nvim'
+        },
+        config = function()
+            require('telescope').setup({
+                defaults = {
+                    layout_strategy = 'horizontal',
+                    layout_config = {
+                        horizontal = {
+                            prompt_position = "top",
+                            preview_width = 0.55,
+                            results_width = 0.8,
+                        },
+                        vertical = {
+                            mirror = false,
+                        },
+                        width = 0.87,
+                        height = 0.80,
+                        preview_cutoff = 120,
+                    },
+                    sorting_strategy = "ascending",
+                    winblend = 0,
+                    border = {},
+                    borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+                    color_devicons = true,
+                    use_less = true,
+                    set_env = { ["COLORTERM"] = "truecolor" },
+                    initial_mode = "normal",
+                },
+                extensions = {
+                    ["ui-select"] = {
+                        require("telescope.themes").get_dropdown({
+                            -- Configure dropdown theme
+                            winblend = 10,
+                            width = 0.8,
+                            previewer = false,
+                            prompt_title = false,
+                            initial_mode = "normal",
+                        })
+                    }
+                }
+            })
+            -- Load the ui-select extension
+            require("telescope").load_extension("ui-select")
+        end
+    },
+    {
+		'ibhagwan/fzf-lua',
+		config = function()
+            require'fzf-lua'.setup{
+                winopts = {
+                    split = "belowright 7new",
+                    preview = { hidden = true }
+                },
+
+				files = {
+					file_icons = false,
+					git_icons = true,
+					_fzf_nth_devicons = true,
+				},
+                fzf_opts = {
+                    ["--layout"] = "default",
+                    ["--no-info"] = "",
+                },
+				buffers = {
+					file_icons = false,
+					git_icons = false,
+					always_show_tabline = false,
+                    ignore_current_buffer = false,
+                    sort_mru = true,
+                    show_all_buffers = true,
+                    cwd_only = false,
+				}
+            }
+            vim.keymap.set('n', '<C-p>', function()
+                require('fzf-lua').files()
+            end, { noremap = true, silent = true })
+            vim.keymap.set('n', '<Esc><CR>', function()
+                require('fzf-lua').files()
+            end, { noremap = true, silent = true })
+            vim.keymap.set('n', '<Esc><Space>', function()
+                require('fzf-lua').buffers()
+            end, { noremap = true, silent = true })
+        end
+    },
     {
         "nvim-neo-tree/neo-tree.nvim",
         branch = "v3.x",
@@ -62,29 +159,32 @@ local plugins = {
         config = function()
             require("neo-tree").setup({
                 window = {
-                    position = "right", -- Show Neo-tree on the right
+                    position = "right",
                     width = 40,
                 },
                 filesystem = {
                     hijack_netrw_behavior = "open_default",
                 },
+                event_handlers = {
+                    {
+                        event = "file_opened",
+                        handler = function()
+                            vim.cmd("Neotree close")
+                        end
+                    }
+                },
             })
-
             vim.api.nvim_create_autocmd("VimEnter", {
                 callback = function()
                     local argc = vim.fn.argc()
                     local arg0 = vim.fn.argv(0)
-
                     if argc == 0 or (argc == 1 and vim.loop.fs_stat(arg0 or "").type == "directory") then
                         vim.schedule(function()
-                            -- Open Neo-tree
                             require("neo-tree.command").execute({
                                 action = "show",
                                 source = "filesystem",
                                 position = "right"
                             })
-
-                            -- Wait until next event loop tick to allow Neo-tree to render
                             vim.schedule(function()
                                 for _, win in ipairs(vim.api.nvim_list_wins()) do
                                     if vim.api.nvim_win_is_valid(win) then
@@ -102,11 +202,8 @@ local plugins = {
                     end
                 end
             })
-
-
         end,
     },
-
     {
         "nvim-lualine/lualine.nvim",
         dependencies = { "nvim-tree/nvim-web-devicons" }
@@ -127,7 +224,6 @@ local plugins = {
         config = function()
             local cmp = require("cmp")
             require("luasnip.loaders.from_vscode").lazy_load()
-
             cmp.setup({
                 snippet = {
                     expand = function(args)
@@ -171,11 +267,8 @@ local plugins = {
     },
     {
         "AlexvZyl/nordic.nvim",
-        lazy = false,
+        lazy = true,
         priority = 1000,
-        config = function()
-            require("nordic").load()
-        end
     },
     {
         "pmizio/typescript-tools.nvim",
@@ -184,30 +277,17 @@ local plugins = {
             require("typescript-tools").setup({})
         end,
     },
-    {
-        "barrett-ruth/live-server.nvim",
-        build = "npm install -g live-server",
-        config = function()
-            require("live-server").setup({})
-        end
-    },
 }
 
--- Lazy
 require("lazy").setup(plugins, {})
 
--- Theme + Lualine
-require("catppuccin").setup()
-vim.g.nord_disable_background = true
-require("nord").set()
-
-local skeme = require("lualine.themes.nord")
+local skeme = require("lualine.themes.gruvbox")
 require("lualine").setup({
     options = {
         icons_enabled = true,
         theme = skeme,
-        component_separators = { left = "", right = "" },
-        section_separators = { left = "", right = "" },
+        component_separators = { left = "", right = "" },
+        section_separators = { left = "", right = "" },
         always_show_tabline = true,
     },
     sections = {
@@ -224,7 +304,6 @@ require("lualine").setup({
     }
 })
 
--- General Settings
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.numberwidth = 3
@@ -235,7 +314,6 @@ vim.o.foldlevel = 99
 vim.opt.foldenable = true
 vim.keymap.set("n", ";", "za", { noremap = true, silent = true })
 
--- Filetypes for JSX/TSX
 vim.filetype.add({
     extension = {
         tsx = "typescriptreact",
@@ -243,7 +321,6 @@ vim.filetype.add({
     },
 })
 
--- LSP Setup
 require("mason").setup({ log_level = vim.log.levels.ERROR })
 require("mason-lspconfig").setup({
     ensure_installed = {
@@ -265,7 +342,6 @@ lsp.emmet_ls.setup({
     filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" }
 })
 
--- Diagnostics
 vim.diagnostic.config({
     virtual_text = {
         severity = { min = vim.diagnostic.severity.HINT },
@@ -281,57 +357,27 @@ vim.diagnostic.config({
     },
 })
 
--- Rust Analyzer
 lsp.rust_analyzer.setup({
     settings = {
         ["rust-analyzer"] = {
-            procMacro = {
-                enable = true
-            },
-            diagnostics = {
-                enable = true,
-            },
-            cargo = {
-                allFeatures = true,
-            },
+            procMacro = { enable = true },
+            diagnostics = { enable = true },
+            cargo = { allFeatures = true },
         }
     },
     root_dir = require("lspconfig.util").root_pattern("Cargo.toml"),
 })
 
--- Telescope
-local builtin = require("telescope.builtin")
-require("telescope").setup({
-    extensions = {
-        ["ui-select"] = {
-            require("telescope.themes").get_dropdown({})
-        }
-    }
-})
-require("telescope").load_extension("fzf")
-require("telescope").load_extension("ui-select")
-
--- Keymaps
-vim.keymap.set("n", "<C-p>", builtin.find_files, {})
-vim.keymap.set("n", "<C-t>", ":Neotree filesystem reveal right<CR>", {})
-vim.keymap.set("n", "<C-x>", ":x!<CR>", {})
+vim.keymap.set("n", "<C-t>", ":Neotree toggle<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-a>", function()
     vim.lsp.buf.code_action()
-end, {})
-vim.keymap.set("n", "<Esc><Space>", function()
-    require("telescope.builtin").find_files({ initial_mode = "normal" })
-end, {})
+end, { noremap = true, silent = true })
+vim.keymap.set("n", "\\", ":Neotree toggle<CR>", { noremap = true, silent = true })
 
--- Zig + Rust runner
-vim.api.nvim_set_keymap("n", "rzig", ":w!<CR>:!zig run ", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "rust", ":w!<CR>:!cargo run<CR>", { noremap = true, silent = true })
-
--- Live Server
-vim.keymap.set("n", "<leader>ls", function()
-  require("live-server").start()
-end, { desc = "Start Live Server" })
-
--- ENV
 vim.env.RUST_BACKTRACE = "1"
 vim.env.RA_LOG = "error"
 
+-- =========================
+-- Delete behavior
+-- =========================
+vim.keymap.set("v", "D", '"_D', { noremap = true })       -- Only D deletes to EOL without yankin
