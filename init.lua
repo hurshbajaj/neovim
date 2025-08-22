@@ -277,6 +277,15 @@ local plugins = {
             require("typescript-tools").setup({})
         end,
     },
+    {
+        "iamcco/markdown-preview.nvim",
+        cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+        build = "cd app && yarn install",
+        init = function()
+            vim.g.mkdp_filetypes = { "markdown" }
+        end,
+        ft = { "markdown" },
+    },
 }
 
 require("lazy").setup(plugins, {})
@@ -381,3 +390,14 @@ vim.env.RA_LOG = "error"
 -- Delete behavior
 -- =========================
 vim.keymap.set("v", "D", '"_D', { noremap = true })       -- Only D deletes to EOL without yankin
+
+-- ==============================
+-- Markdown Support
+-- ==============================
+vim.api.nvim_create_user_command('Md', function()
+    if vim.bo.filetype == 'markdown' then
+        vim.cmd('MarkdownPreview')
+    else
+        print('Not a markdown file')
+    end
+end, { desc = 'Open markdown preview' })
