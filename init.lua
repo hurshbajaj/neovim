@@ -401,3 +401,53 @@ vim.api.nvim_create_user_command('Md', function()
         print('Not a markdown file')
     end
 end, { desc = 'Open markdown preview' })
+
+-- ==============
+-- Function find
+-- ==============
+
+-- Function picker using fzf-lua + LSP
+local function pick_functions()
+  local params = { textDocument = vim.lsp.util.make_text_document_params() }
+  vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(_, result, _, _)
+    if not result then return end
+
+    local entries = {}
+    for _, symbol in ipairs(result) do
+      local kind = symbol.kind
+      if kind == 12 or kind == 6 then -- Function = 12, Method = 6
+        local range = symbol.range.start
+        table.insert(entries, {
+          text = symbol.name,
+          lnum = range.line + 1,
+          col = range.character + 1,
+          filename = vim.api.nvim_buf_get_name(0),
+        })
+      end
+    end
+
+    if vim.tbl_isempty(entries) then
+      print("No functions found")
+      return
+    end
+
+    require("fzf-lua").fzf_exec(
+      vim.tbl_map(function(item)
+        return string.format("%s:%d:%d", item.text, item.lnum, item.col)
+      end, entries),
+      {
+        prompt = "Functions> ",
+        actions = {
+          ["default"] = function(selected)
+            local name, lnum, col = selected[1]:match("^(.*):(%d+):(%d+)$")
+            vim.api.nvim_win_set_cursor(0, { tonumber(lnum), tonumber(col) - 1 })
+          end,
+        },
+      }
+    )
+  end)
+end
+
+-- Map <Esc>; to function picker
+vim.keymap.set("n", "<Esc>;", pick_functions, { noremap = true, silent = true })
+
