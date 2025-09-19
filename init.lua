@@ -34,13 +34,22 @@ local plugins = {
     { "wakatime/vim-wakatime", lazy = false },
     { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
-        "ellisonleao/gruvbox.nvim",
+        "sainnhe/sonokai",
         lazy = false,
         priority = 1000,
         config = function()
-            require("gruvbox").setup({contrast = "hard"})
+            vim.g.sonokai_style = 'espresso'
+            -- Enable better performance
+            vim.g.sonokai_better_performance = 1
+            -- Make it more transparent (optional)
+            vim.g.sonokai_transparent_background = 0
+            -- Disable italic comments if desired
+            vim.g.sonokai_disable_italic_comment = 0
+            -- Enable cursor line highlighting
+            vim.g.sonokai_cursor_line_style = 'bold'
+            
             vim.o.background = "dark"
-            vim.cmd("colorscheme gruvbox")
+            vim.cmd("colorscheme sonokai")
         end,
     },
     {
@@ -290,11 +299,11 @@ local plugins = {
 
 require("lazy").setup(plugins, {})
 
-local skeme = require("lualine.themes.gruvbox")
+-- Configure lualine with sonokai theme
 require("lualine").setup({
     options = {
         icons_enabled = true,
-        theme = skeme,
+        theme = "sonokai",
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         always_show_tabline = true,
