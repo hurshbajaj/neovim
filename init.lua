@@ -3,7 +3,7 @@ vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
 vim.g.mapleader = " "
 
 vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
+vim.g.loaded_netrwPlugin = 1;
 
 vim.opt.expandtab = false
 vim.opt.shiftwidth = 4
@@ -34,22 +34,19 @@ local plugins = {
     { "wakatime/vim-wakatime", lazy = false },
     { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
-        "sainnhe/sonokai",
+        "shaunsingh/moonlight.nvim",
         lazy = false,
         priority = 1000,
         config = function()
-            vim.g.sonokai_style = 'espresso'
-            -- Enable better performance
-            vim.g.sonokai_better_performance = 1
-            -- Make it more transparent (optional)
-            vim.g.sonokai_transparent_background = 0
-            -- Disable italic comments if desired
-            vim.g.sonokai_disable_italic_comment = 0
-            -- Enable cursor line highlighting
-            vim.g.sonokai_cursor_line_style = 'bold'
-            
-            vim.o.background = "dark"
-            vim.cmd("colorscheme sonokai")
+            vim.g.moonlight_italic_comments = true
+            vim.g.moonlight_italic_keywords = true
+            vim.g.moonlight_italic_functions = false
+            vim.g.moonlight_italic_variables = false
+            vim.g.moonlight_contrast = true
+            vim.g.moonlight_borders = false
+            vim.g.moonlight_disable_background = false
+
+            vim.cmd("colorscheme moonlight")
         end,
     },
     {
@@ -170,6 +167,10 @@ local plugins = {
                 window = {
                     position = "right",
                     width = 40,
+                    mappings = {
+                        ["<"] = "none",
+                        [">"] = "none",
+                    },
                 },
                 filesystem = {
                     hijack_netrw_behavior = "open_default",
@@ -256,6 +257,10 @@ local plugins = {
                 }, {
                     { name = "buffer" },
                 }),
+                preselect = cmp.PreselectMode.Item,
+                completion = {
+                    completeopt = "menu,menuone,noinsert"
+                },
             })
         end,
     },
@@ -266,7 +271,7 @@ local plugins = {
             require("nvim-treesitter.configs").setup {
                 ensure_installed = {
                     "lua", "rust", "zig", "python", "go", "c", "cpp",
-                    "html", "css", "javascript", "typescript", "tsx"
+                    "html", "css", "javascript", "typescript", "tsx", "ocaml"
                 },
                 highlight = {
                     enable = true
@@ -299,11 +304,11 @@ local plugins = {
 
 require("lazy").setup(plugins, {})
 
--- Configure lualine with sonokai theme
+-- Configure lualine with moonlight theme
 require("lualine").setup({
     options = {
         icons_enabled = true,
-        theme = "sonokai",
+        theme = "moonlight",
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         always_show_tabline = true,
@@ -360,15 +365,37 @@ lsp.emmet_ls.setup({
     filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" }
 })
 
+-- OCaml LSP setup (without formatting)
+lsp.ocamllsp.setup({
+    cmd = { "ocamllsp" },
+    filetypes = { "ocaml", "ocaml.menhir", "ocaml.interface", "ocaml.ocamllex", "reason", "dune" },
+    root_dir = lsp.util.root_pattern("*.opam", "esy.json", "package.json", "dune-project", "dune-workspace"),
+    on_attach = function(client, bufnr)
+        -- Disable formatting for OCaml LSP
+        client.server_capabilities.documentFormattingProvider = false
+        client.server_capabilities.documentRangeFormattingProvider = false
+    end,
+    settings = {},
+})
+
 vim.diagnostic.config({
     virtual_text = {
         severity = { min = vim.diagnostic.severity.HINT },
         spacing = 4,
         prefix = "",
+        format = function(diagnostic)
+            local severity_prefix = {
+                [vim.diagnostic.severity.ERROR] = "**",
+                [vim.diagnostic.severity.WARN] = "",
+                [vim.diagnostic.severity.INFO] = "",
+                [vim.diagnostic.severity.HINT] = "",
+            }
+            return severity_prefix[diagnostic.severity] .. diagnostic.message
+        end,
     },
     underline = true,
     update_in_insert = true,
-    signs = true,
+    signs = false,
     float = {
         border = "rounded",
         source = "always",
@@ -460,3 +487,54 @@ end
 -- Map <Esc>; to function picker
 vim.keymap.set("n", "<Esc>;", pick_functions, { noremap = true, silent = true })
 
+-- esc + enter >> for all files
+-- esc + space >> buffer
+-- esc + ; >> functions
+vim.opt.fillchars = { vert = '│' }
+
+-- Filter out specific LSP messages
+local notify_filter = function(text, level, opts)
+    local blocklist = {
+        "Unable to find 'ocamlformat%-rpc' binary",
+    }
+    
+    for _, pattern in ipairs(blocklist) do
+        if text:find(pattern) then
+            return
+        end
+    end
+    
+    return vim.notify(text, level, opts)
+end
+
+-- Override LSP handlers to filter messages
+vim.lsp.handlers["window/showMessage"] = function(_, result, ctx)
+    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    local lvl = ({
+        "ERROR",
+        "WARN",
+        "INFO",
+        "DEBUG",
+    })[result.type]
+    
+    notify_filter(result.message, lvl, { title = "LSP | " .. client.name })
+end
+
+-- Suppress specific messages (or all messages)
+local original_notify = vim.notify
+vim.notify = function(msg, log_level, opts)
+    -- If you want to ignore only a specific string, check it here:
+    if msg == "LSP[ocamllsp][Info] Unable to find 'ocamlformat-rpc' binary. Types on hover may not be well-formatted. You need to install either 'ocamlformat' of version > 0.21.0 or, otherwise, 'ocamlformat-rpc' package." then  -- <- replace "" with the string you want to hide
+        return
+    end
+
+    -- Otherwise, show normally
+    original_notify(msg, log_level, opts)
+end
+
+-- ==============================
+-- Custom :Rename command
+-- ==============================
+vim.api.nvim_create_user_command("Rename", function()
+    vim.lsp.buf.rename()
+end, { desc = "LSP Rename symbol" })
