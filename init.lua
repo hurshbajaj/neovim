@@ -116,45 +116,6 @@ local plugins = {
         end
     },
     {
-		'ibhagwan/fzf-lua',
-		config = function()
-            require'fzf-lua'.setup{
-                winopts = {
-                    split = "belowright 7new",
-                    preview = { hidden = true }
-                },
-
-				files = {
-					file_icons = false,
-					git_icons = true,
-					_fzf_nth_devicons = true,
-				},
-                fzf_opts = {
-                    ["--layout"] = "default",
-                    ["--no-info"] = "",
-                },
-				buffers = {
-					file_icons = false,
-					git_icons = false,
-					always_show_tabline = false,
-                    ignore_current_buffer = false,
-                    sort_mru = true,
-                    show_all_buffers = true,
-                    cwd_only = false,
-				}
-            }
-            vim.keymap.set('n', '<C-p>', function()
-                require('fzf-lua').files()
-            end, { noremap = true, silent = true })
-            vim.keymap.set('n', '<Esc><CR>', function()
-                require('fzf-lua').files()
-            end, { noremap = true, silent = true })
-            vim.keymap.set('n', '<Esc><Space>', function()
-                require('fzf-lua').buffers()
-            end, { noremap = true, silent = true })
-        end
-    },
-    {
         "nvim-neo-tree/neo-tree.nvim",
         branch = "v3.x",
         dependencies = {
@@ -380,12 +341,12 @@ lsp.ocamllsp.setup({
 
 vim.diagnostic.config({
     virtual_text = {
-        severity = { min = vim.diagnostic.severity.HINT },
+        severity = { min = vim.diagnostic.severity.ERROR },
         spacing = 4,
         prefix = "",
         format = function(diagnostic)
             local severity_prefix = {
-                [vim.diagnostic.severity.ERROR] = "**",
+                [vim.diagnostic.severity.ERROR] = "",
                 [vim.diagnostic.severity.WARN] = "",
                 [vim.diagnostic.severity.INFO] = "",
                 [vim.diagnostic.severity.HINT] = "",
@@ -439,53 +400,72 @@ vim.api.nvim_create_user_command('Md', function()
 end, { desc = 'Open markdown preview' })
 
 -- ==============
--- Function find
+-- Telescope Pickers with Dropdown Theme
 -- ==============
 
--- Function picker using fzf-lua + LSP
+-- File picker using Telescope dropdown
+vim.keymap.set('n', '<C-p>', function()
+    require('telescope.builtin').find_files(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+    }))
+end, { noremap = true, silent = true })
+
+vim.keymap.set('n', '<Esc><CR>', function()
+    require('telescope.builtin').find_files(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+    }))
+end, { noremap = true, silent = true })
+
+-- Buffer picker using Telescope dropdown
+vim.keymap.set('n', '<Esc><Space>', function()
+    require('telescope.builtin').buffers(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+        sort_mru = true,
+        ignore_current_buffer = false,
+    }))
+end, { noremap = true, silent = true })
+
+-- Function picker using Telescope dropdown
 local function pick_functions()
-  local params = { textDocument = vim.lsp.util.make_text_document_params() }
-  vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(_, result, _, _)
-    if not result then return end
-
-    local entries = {}
-    for _, symbol in ipairs(result) do
-      local kind = symbol.kind
-      if kind == 12 or kind == 6 then -- Function = 12, Method = 6
-        local range = symbol.range.start
-        table.insert(entries, {
-          text = symbol.name,
-          lnum = range.line + 1,
-          col = range.character + 1,
-          filename = vim.api.nvim_buf_get_name(0),
-        })
-      end
-    end
-
-    if vim.tbl_isempty(entries) then
-      print("No functions found")
-      return
-    end
-
-    require("fzf-lua").fzf_exec(
-      vim.tbl_map(function(item)
-        return string.format("%s:%d:%d", item.text, item.lnum, item.col)
-      end, entries),
-      {
-        prompt = "Functions> ",
-        actions = {
-          ["default"] = function(selected)
-            local name, lnum, col = selected[1]:match("^(.*):(%d+):(%d+)$")
-            vim.api.nvim_win_set_cursor(0, { tonumber(lnum), tonumber(col) - 1 })
-          end,
-        },
-      }
-    )
-  end)
+    require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+        symbols = { "function", "method" },
+    }))
 end
 
--- Map <Esc>; to function picker
 vim.keymap.set("n", "<Esc>;", pick_functions, { noremap = true, silent = true })
+
+-- LSP References using Telescope dropdown
+vim.keymap.set('n', 'gr', function()
+    require('telescope.builtin').lsp_references(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+    }))
+end, { noremap = true, silent = true })
+
+-- LSP Definitions using Telescope dropdown
+vim.keymap.set('n', 'gd', function()
+    require('telescope.builtin').lsp_definitions(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+    }))
+end, { noremap = true, silent = true })
 
 -- esc + enter >> for all files
 -- esc + space >> buffer
@@ -538,3 +518,9 @@ end
 vim.api.nvim_create_user_command("Rename", function()
     vim.lsp.buf.rename()
 end, { desc = "LSP Rename symbol" })
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = function()
+    vim.cmd("highlight NeoTreeRootName gui=underline guifg=#89b4fa")
+  end,
+})
