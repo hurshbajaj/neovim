@@ -533,12 +533,22 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   end,
 })
 
--- :FIND command - search for word under cursor project-wide
+-- :FIND command - interactive project-wide search
 vim.api.nvim_create_user_command('FIND', function()
-    require('telescope.builtin').grep_string(require('telescope.themes').get_dropdown({
+    require('telescope.builtin').live_grep(require('telescope.themes').get_dropdown({
         winblend = 10,
         previewer = false,
         prompt_title = false,
-        initial_mode = "normal",
+        initial_mode = "insert",
     }))
-end, { desc = 'Find word under cursor in project' })
+end, { desc = 'Search in project' })
+
+-- :Find command - interactive search in current buffer
+vim.api.nvim_create_user_command('Find', function()
+    require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "insert",
+    }))
+end, { desc = 'Search in current buffer' })
