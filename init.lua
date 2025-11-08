@@ -134,6 +134,15 @@ local plugins = {
                     },
                 },
                 filesystem = {
+					filtered_items = {
+						visible = false,
+						hide_dotfiles = false,
+						hide_gitignored = false,
+						hide_by_name = {},
+						hide_by_pattern = {
+							"*.o",
+						},
+					},
                     hijack_netrw_behavior = "open_default",
                 },
                 event_handlers = {
