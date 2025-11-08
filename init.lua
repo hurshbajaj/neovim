@@ -315,19 +315,23 @@ require("mason-lspconfig").setup({
 })
 
 local lsp = require("lspconfig")
-lsp.pyright.setup({})
-lsp.lua_ls.setup({})
-lsp.zls.setup({})
-lsp.clangd.setup({})
-lsp.gopls.setup({})
-lsp.html.setup({})
-lsp.cssls.setup({})
+local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+lsp.pyright.setup({ capabilities = capabilities })
+lsp.lua_ls.setup({ capabilities = capabilities })
+lsp.zls.setup({ capabilities = capabilities })
+lsp.clangd.setup({ capabilities = capabilities })
+lsp.gopls.setup({ capabilities = capabilities })
+lsp.html.setup({ capabilities = capabilities })
+lsp.cssls.setup({ capabilities = capabilities })
 lsp.emmet_ls.setup({
+    capabilities = capabilities,
     filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" }
 })
 
 -- OCaml LSP setup (without formatting)
 lsp.ocamllsp.setup({
+    capabilities = capabilities,
     cmd = { "ocamllsp" },
     filetypes = { "ocaml", "ocaml.menhir", "ocaml.interface", "ocaml.ocamllex", "reason", "dune" },
     root_dir = lsp.util.root_pattern("*.opam", "esy.json", "package.json", "dune-project", "dune-workspace"),
@@ -364,6 +368,7 @@ vim.diagnostic.config({
 })
 
 lsp.rust_analyzer.setup({
+    capabilities = capabilities,
     settings = {
         ["rust-analyzer"] = {
             procMacro = { enable = true },
