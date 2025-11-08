@@ -532,3 +532,13 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     vim.cmd("highlight NeoTreeRootName gui=underline guifg=#89b4fa")
   end,
 })
+
+-- :FIND command - search for word under cursor project-wide
+vim.api.nvim_create_user_command('FIND', function()
+    require('telescope.builtin').grep_string(require('telescope.themes').get_dropdown({
+        winblend = 10,
+        previewer = false,
+        prompt_title = false,
+        initial_mode = "normal",
+    }))
+end, { desc = 'Find word under cursor in project' })
