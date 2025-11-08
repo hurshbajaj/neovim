@@ -454,6 +454,7 @@ vim.keymap.set('n', 'gr', function()
         previewer = false,
         prompt_title = false,
         initial_mode = "normal",
+        include_current_line = true,
     }))
 end, { noremap = true, silent = true })
 
@@ -464,6 +465,8 @@ vim.keymap.set('n', 'gd', function()
         previewer = false,
         prompt_title = false,
         initial_mode = "normal",
+        jump_type = "never",
+        reuse_win = true,
     }))
 end, { noremap = true, silent = true })
 
