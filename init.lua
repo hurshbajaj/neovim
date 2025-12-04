@@ -34,20 +34,20 @@ local plugins = {
     { "wakatime/vim-wakatime", lazy = false },
     { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
-        "shaunsingh/moonlight.nvim",
+        "ellisonleao/gruvbox.nvim",
         lazy = false,
         priority = 1000,
         config = function()
-            vim.g.moonlight_italic_comments = true
-            vim.g.moonlight_italic_keywords = true
-            vim.g.moonlight_italic_functions = false
-            vim.g.moonlight_italic_variables = false
-            vim.g.moonlight_contrast = true
-            vim.g.moonlight_borders = false
-            vim.g.moonlight_disable_background = false
-
-            vim.cmd("colorscheme moonlight")
+            require("gruvbox").setup({
+                contrast = "hard",
+            })
+            vim.cmd("colorscheme gruvbox")
         end,
+    },
+    {
+        "shaunsingh/moonlight.nvim",
+        lazy = true,
+        priority = 1000,
     },
     {
         "folke/tokyonight.nvim",
@@ -274,11 +274,11 @@ local plugins = {
 
 require("lazy").setup(plugins, {})
 
--- Configure lualine with moonlight theme
+-- Configure lualine with gruvbox theme
 require("lualine").setup({
     options = {
         icons_enabled = true,
-        theme = "moonlight",
+        theme = "gruvbox_dark",
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         always_show_tabline = true,
@@ -317,16 +317,15 @@ vim.filetype.add({
 require("mason").setup({ log_level = vim.log.levels.ERROR })
 require("mason-lspconfig").setup({
     ensure_installed = {
-        "lua_ls", "zls", "rust_analyzer",
-        "pyright", "clangd", "gopls",
-        "html", "cssls", "emmet_ls"
+		"lua_ls", "zls", "rust_analyzer",
+		 "clangd", "gopls",
+			"html", "cssls", "emmet_ls"
     },
 })
 
 local lsp = require("lspconfig")
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-lsp.pyright.setup({ capabilities = capabilities })
 lsp.lua_ls.setup({ capabilities = capabilities })
 lsp.zls.setup({ capabilities = capabilities })
 lsp.clangd.setup({ capabilities = capabilities })
