@@ -491,18 +491,16 @@ lsp.emmet_ls.setup({
     filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" }
 })
 
--- OCaml LSP setup (without formatting)
+-- OCaml LSP setup with proper configuration
 lsp.ocamllsp.setup({
     capabilities = capabilities,
     cmd = { "ocamllsp" },
     filetypes = { "ocaml", "ocaml.menhir", "ocaml.interface", "ocaml.ocamllex", "reason", "dune" },
     root_dir = lsp.util.root_pattern("*.opam", "esy.json", "package.json", "dune-project", "dune-workspace"),
-    on_attach = function(client, bufnr)
-        -- Disable formatting for OCaml LSP
-        client.server_capabilities.documentFormattingProvider = false
-        client.server_capabilities.documentRangeFormattingProvider = false
-    end,
-    settings = {},
+    settings = {
+        codelens = { enable = true },
+        inlayHints = { enable = true },
+    },
 })
 
 vim.diagnostic.config({
@@ -601,15 +599,29 @@ vim.keymap.set('n', '<Esc><Space>', function()
     }))
 end, { noremap = true, silent = true })
 
--- Function picker using Telescope dropdown
+-- Function picker using Telescope dropdown with OCaml support
 local function pick_functions()
-    require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
-        winblend = 10,
-        previewer = false,
-        prompt_title = false,
-        initial_mode = "normal",
-        symbols = { "function", "method" },
-    }))
+    local filetype = vim.bo.filetype
+    
+    -- For OCaml, show variables (let bindings are reported as variables)
+    if filetype == "ocaml" or filetype == "ocaml.interface" or filetype == "ocaml.menhir" then
+        require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
+            winblend = 10,
+            previewer = false,
+            prompt_title = false,
+            initial_mode = "normal",
+            symbols = { "variable" },
+        }))
+    else
+        -- For other languages, filter to functions and methods
+        require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
+            winblend = 10,
+            previewer = false,
+            prompt_title = false,
+            initial_mode = "normal",
+            symbols = { "function", "method" },
+        }))
+    end
 end
 
 vim.keymap.set("n", "<Esc>;", pick_functions, { noremap = true, silent = true })
@@ -642,44 +654,27 @@ end, { noremap = true, silent = true })
 -- esc + ; >> functions
 vim.opt.fillchars = { vert = '│' }
 
--- Filter out specific LSP messages
-local notify_filter = function(text, level, opts)
-    local blocklist = {
-        "Unable to find 'ocamlformat%-rpc' binary",
-    }
-    
-    for _, pattern in ipairs(blocklist) do
-        if text:find(pattern) then
-            return
-        end
-    end
-    
-    return vim.notify(text, level, opts)
-end
-
--- Override LSP handlers to filter messages
-vim.lsp.handlers["window/showMessage"] = function(_, result, ctx)
-    local client = vim.lsp.get_client_by_id(ctx.client_id)
-    local lvl = ({
-        "ERROR",
-        "WARN",
-        "INFO",
-        "DEBUG",
-    })[result.type]
-    
-    notify_filter(result.message, lvl, { title = "LSP | " .. client.name })
-end
-
--- Suppress specific messages (or all messages)
+-- Suppress specific OCaml LSP messages
 local original_notify = vim.notify
 vim.notify = function(msg, log_level, opts)
-    -- If you want to ignore only a specific string, check it here:
-    if msg == "LSP[ocamllsp][Info] Unable to find 'ocamlformat-rpc' binary. Types on hover may not be well-formatted. You need to install either 'ocamlformat' of version > 0.21.0 or, otherwise, 'ocamlformat-rpc' package." then  -- <- replace "" with the string you want to hide
+    -- Suppress ocamlformat-rpc warning
+    if msg and (msg:match("ocamlformat%-rpc") or msg:match("ocamlformat'")) then
         return
     end
 
     -- Otherwise, show normally
     original_notify(msg, log_level, opts)
+end
+
+-- Override LSP message handler to suppress ocamlformat warnings
+vim.lsp.handlers["window/showMessage"] = function(err, result, ctx, config)
+    -- Suppress ocamlformat-rpc messages
+    if result and result.message and (result.message:match("ocamlformat%-rpc") or result.message:match("ocamlformat'")) then
+        return
+    end
+    
+    -- Use default handler for other messages
+    vim.notify(result.message, result.type)
 end
 
 -- ==============================
