@@ -609,7 +609,7 @@ local function pick_functions()
             winblend = 10,
             previewer = false,
             prompt_title = false,
-            initial_mode = "normal",
+            initial_mode = "insert",
             symbols = { "variable" },
         }))
     else
