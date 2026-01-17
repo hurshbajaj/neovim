@@ -31,7 +31,24 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 local plugins = {
-    { "wakatime/vim-wakatime", lazy = false },
+	{
+	  "folke/noice.nvim",
+	  dependencies = {
+		"MunifTanjim/nui.nvim",
+		"rcarriga/nvim-notify",
+	  },
+	  config = function()
+		require("noice").setup({
+		  cmdline = {
+			view = "cmdline_popup",
+		  },
+		  messages = {
+			enabled = true,
+		  },
+		})
+	  end,
+	},
+	{ "wakatime/vim-wakatime", lazy = false },
     { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
         "ellisonleao/gruvbox.nvim",
@@ -709,3 +726,24 @@ vim.api.nvim_create_user_command('Find', function()
         initial_mode = "insert",
     }))
 end, { desc = 'Search in current buffer' })
+
+vim.api.nvim_create_autocmd("BufWritePost", {
+  callback = function(args)
+    local bytes = vim.fn.getfsize(args.file)
+    if bytes >= 0 then
+      vim.notify(
+        string.format("%s written (%d bytes)", vim.fn.fnamemodify(args.file, ":t"), bytes),
+        vim.log.levels.INFO
+      )
+    else
+      vim.notify(
+        string.format("%s written", vim.fn.fnamemodify(args.file, ":t")),
+        vim.log.levels.INFO
+      )
+    end
+  end,
+})
+
+vim.keymap.set("n", "<CR>", function()
+    require("notify").dismiss({ silent = true, pending = true })
+end, { noremap = true, silent = true })
