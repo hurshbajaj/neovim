@@ -49,25 +49,9 @@ local plugins = {
 	  end,
 	},
 	{ "wakatime/vim-wakatime", lazy = false },
-    { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
     {
-        "ellisonleao/gruvbox.nvim",
-        lazy = true,
-        priority = 1000,
-    },
-    {
-        "shaunsingh/moonlight.nvim",
-        lazy = true,
-        priority = 1000,
-    },
-    {
-        "folke/tokyonight.nvim",
-        lazy = true,
-        priority = 1000,
-    },
-    {
-        "shaunsingh/nord.nvim",
-        lazy = true,
+        "slugbyte/lackluster.nvim",
+        lazy = false,
         priority = 1000,
     },
     {
@@ -261,11 +245,6 @@ local plugins = {
         end
     },
     {
-        "AlexvZyl/nordic.nvim",
-        lazy = true,
-        priority = 1000,
-    },
-    {
         "pmizio/typescript-tools.nvim",
         dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
         config = function()
@@ -285,171 +264,21 @@ local plugins = {
 
 require("lazy").setup(plugins, {})
 
--- Candle-grey inspired theme - monochrome with subtle accent
-vim.cmd([[
-    hi clear
-    if exists("syntax_on")
-        syntax reset
-    endif
-    
-    set background=dark
-    let g:colors_name = "candle_inspired"
-    
-    " Core UI - Pure Black with grayscale
-    hi Normal guifg=#bcbcbc guibg=#000000
-    hi NormalFloat guifg=#bcbcbc guibg=#000000
-    hi LineNr guifg=#4e4e4e guibg=#000000
-    hi CursorLineNr guifg=#808080 guibg=#000000
-    hi SignColumn guibg=#000000
-    hi VertSplit guifg=#262626 guibg=#000000
-    hi StatusLine guifg=#949494 guibg=#000000
-    hi StatusLineNC guifg=#4e4e4e guibg=#000000
-    hi Pmenu guifg=#bcbcbc guibg=#0a0a0a
-    hi PmenuSel guifg=#ffffff guibg=#1c1c1c
-    hi Visual guibg=#1c1c1c
-    hi Search guifg=#000000 guibg=#808080
-    hi CursorLine guibg=#0a0a0a
-    
-    " Syntax - Mostly monochrome with subtle accent (#af875f - muted gold/tan)
-    hi Comment guifg=#6c6c6c gui=italic
-    hi Constant guifg=#949494
-    hi String guifg=#af875f
-    hi Character guifg=#af875f
-    hi Number guifg=#949494
-    hi Boolean guifg=#949494
-    hi Float guifg=#949494
-    
-    hi Identifier guifg=#bcbcbc
-    hi Function guifg=#bcbcbc
-    
-    hi Statement guifg=#bcbcbc
-    hi Conditional guifg=#bcbcbc
-    hi Repeat guifg=#bcbcbc
-    hi Label guifg=#bcbcbc
-    hi Operator guifg=#808080
-    hi Keyword guifg=#bcbcbc
-    hi Exception guifg=#bcbcbc
-    
-    hi PreProc guifg=#bcbcbc
-    hi Include guifg=#bcbcbc
-    hi Define guifg=#bcbcbc
-    hi Macro guifg=#bcbcbc
-    hi PreCondit guifg=#bcbcbc
-    
-    hi Type guifg=#bcbcbc
-    hi StorageClass guifg=#bcbcbc
-    hi Structure guifg=#bcbcbc
-    hi Typedef guifg=#bcbcbc
-    
-    hi Special guifg=#949494
-    hi SpecialChar guifg=#949494
-    hi Tag guifg=#bcbcbc
-    hi Delimiter guifg=#6c6c6c
-    hi SpecialComment guifg=#808080 gui=italic
-    hi Debug guifg=#949494
-    
-    " Errors and warnings - subtle but visible
-    hi Error guifg=#d75f5f guibg=NONE
-    hi ErrorMsg guifg=#d75f5f guibg=NONE
-    hi WarningMsg guifg=#d7875f guibg=NONE
-    hi DiagnosticError guifg=#d75f5f
-    hi DiagnosticWarn guifg=#d7875f
-    hi DiagnosticInfo guifg=#808080
-    hi DiagnosticHint guifg=#6c6c6c
-    
-    " LSP
-    hi LspReferenceText guibg=#1c1c1c
-    hi LspReferenceRead guibg=#1c1c1c
-    hi LspReferenceWrite guibg=#1c1c1c
-    
-    " Treesitter - monochrome with string accent
-    hi @variable guifg=#bcbcbc
-    hi @variable.builtin guifg=#949494
-    hi @function guifg=#bcbcbc
-    hi @function.builtin guifg=#bcbcbc
-    hi @keyword guifg=#bcbcbc
-    hi @keyword.function guifg=#bcbcbc
-    hi @keyword.import guifg=#bcbcbc
-    hi @string guifg=#af875f
-    hi @number guifg=#949494
-    hi @boolean guifg=#949494
-    hi @type guifg=#bcbcbc
-    hi @type.builtin guifg=#949494
-    hi @property guifg=#bcbcbc
-    hi @field guifg=#bcbcbc
-    hi @parameter guifg=#949494
-    hi @namespace guifg=#bcbcbc
-    hi @operator guifg=#808080
-    hi @punctuation.bracket guifg=#6c6c6c
-    hi @punctuation.delimiter guifg=#6c6c6c
-    hi @comment guifg=#6c6c6c gui=italic
-    hi @error guifg=#d75f5f
-    
-    " Telescope
-    hi TelescopeBorder guifg=#3a3a3a
-    hi TelescopePromptBorder guifg=#3a3a3a
-    hi TelescopeResultsBorder guifg=#3a3a3a
-    hi TelescopePreviewBorder guifg=#3a3a3a
-    hi TelescopeSelection guibg=#1c1c1c
-    hi TelescopeSelectionCaret guifg=#808080
-    hi TelescopeMatching guifg=#ffffff
-    
-    " Neo-tree
-    hi NeoTreeNormal guibg=#000000
-    hi NeoTreeNormalNC guibg=#000000
-    hi NeoTreeDirectoryIcon guifg=#808080
-    hi NeoTreeDirectoryName guifg=#949494
-    hi NeoTreeFileName guifg=#bcbcbc
-    hi NeoTreeFileIcon guifg=#6c6c6c
-    hi NeoTreeGitModified guifg=#d7875f
-    hi NeoTreeGitAdded guifg=#87af87
-    hi NeoTreeGitDeleted guifg=#d75f5f
-    hi NeoTreeRootName guifg=#bcbcbc gui=underline
-    hi NeoTreeIndentMarker guifg=#303030
-    
-    " Completion menu
-    hi CmpItemAbbrMatch guifg=#ffffff
-    hi CmpItemAbbrMatchFuzzy guifg=#bcbcbc
-    hi CmpItemKind guifg=#808080
-    hi CmpItemMenu guifg=#6c6c6c
-]])
+-- Apply lackluster colorscheme
+local lackluster = require("lackluster")
+lackluster.setup({
+    tweak_syntax = {
+        comment = lackluster.color.gray4,
+        string = lackluster.color.green,
+    },
+})
+vim.cmd.colorscheme("lackluster")
 
--- Configure lualine with candle-grey inspired theme
+-- Configure lualine with lackluster theme
 require("lualine").setup({
     options = {
         icons_enabled = true,
-        theme = {
-            normal = {
-                a = { fg = '#bcbcbc', bg = '#000000' },
-                b = { fg = '#808080', bg = '#000000' },
-                c = { fg = '#6c6c6c', bg = '#000000' },
-            },
-            insert = {
-                a = { fg = '#bcbcbc', bg = '#000000' },
-                b = { fg = '#808080', bg = '#000000' },
-                c = { fg = '#6c6c6c', bg = '#000000' },
-            },
-            visual = {
-                a = { fg = '#bcbcbc', bg = '#000000' },
-                b = { fg = '#808080', bg = '#000000' },
-                c = { fg = '#6c6c6c', bg = '#000000' },
-            },
-            replace = {
-                a = { fg = '#bcbcbc', bg = '#000000' },
-                b = { fg = '#808080', bg = '#000000' },
-                c = { fg = '#6c6c6c', bg = '#000000' },
-            },
-            command = {
-                a = { fg = '#bcbcbc', bg = '#000000' },
-                b = { fg = '#808080', bg = '#000000' },
-                c = { fg = '#6c6c6c', bg = '#000000' },
-            },
-            inactive = {
-                a = { fg = '#4e4e4e', bg = '#000000' },
-                b = { fg = '#4e4e4e', bg = '#000000' },
-                c = { fg = '#4e4e4e', bg = '#000000' },
-            },
-        },
+        theme = "lackluster",
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         always_show_tabline = true,
@@ -700,12 +529,6 @@ end
 vim.api.nvim_create_user_command("Rename", function()
     vim.lsp.buf.rename()
 end, { desc = "LSP Rename symbol" })
-
-vim.api.nvim_create_autocmd("ColorScheme", {
-  callback = function()
-    vim.cmd("highlight NeoTreeRootName gui=underline guifg=#bcbcbc")
-  end,
-})
 
 -- :FIND command - interactive project-wide search
 vim.api.nvim_create_user_command('FIND', function()
