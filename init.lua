@@ -293,7 +293,6 @@ require("lualine").setup({
 })
 
 vim.opt.number = true
-vim.opt.relativenumber = true
 vim.opt.signcolumn = "no"
 vim.opt.clipboard = "unnamedplus"
 vim.o.foldmethod = "indent"
@@ -600,5 +599,19 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 vim.keymap.set("n", "<CR>", function()
     require("notify").dismiss({ silent = true, pending = true })
 end, { noremap = true, silent = true })
-vim.opt.statuscolumn = "  %s%=%{v:lnum} %#Normal#  "
+vim.opt.statuscolumn = "  %s%=%{v:relnum?v:relnum:v:lnum} %#Normal#  "
+-- vim.opt.statuscolumn = "  %s%=%{v:relnum} %#Normal#  "
+vim.opt.relativenumber = true
 
+vim.opt.statuscolumn = "  %s%=%{v:relnum?v:relnum:v:lnum} %#Normal#  "
+
+vim.api.nvim_create_autocmd("BufEnter", {
+    pattern = "*",
+    callback = function()
+        if vim.bo.filetype == "neo-tree" then
+            vim.opt_local.number = false
+            vim.opt_local.relativenumber = false
+            vim.opt_local.statuscolumn = ""
+        end
+    end,
+})
