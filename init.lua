@@ -615,3 +615,81 @@ vim.api.nvim_create_autocmd("BufEnter", {
         end
     end,
 })
+
+-- ==============================
+-- Inline diagnostic popup on 'e'
+-- ==============================
+vim.keymap.set("n", "e", function()
+    local diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
+    if #diagnostics == 0 then return end
+
+    local lines = {}
+    for _, d in ipairs(diagnostics) do
+        local prefix = ({
+            [vim.diagnostic.severity.ERROR] = " ",
+            [vim.diagnostic.severity.WARN]  = " ",
+            [vim.diagnostic.severity.INFO]  = " ",
+            [vim.diagnostic.severity.HINT]  = " ",
+        })[d.severity] or ""
+
+        local raw_lines = {}
+        for part in (d.message .. "\n"):gmatch("([^\n]*)\n") do
+            table.insert(raw_lines, part)
+        end
+
+        local width = 60
+        for i, part in ipairs(raw_lines) do
+            local msg = (i == 1 and prefix or "  ") .. part
+            while #msg > width do
+                local break_at = msg:sub(1, width):match(".*()%s") or width
+                table.insert(lines, msg:sub(1, break_at - 1))
+                msg = "  " .. msg:sub(break_at + 1)
+            end
+            table.insert(lines, msg)
+        end
+    end
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+    vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+
+    local max_width = 0
+    for _, l in ipairs(lines) do
+        max_width = math.max(max_width, #l)
+    end
+    max_width = math.min(max_width, 65)
+
+    local win = vim.api.nvim_open_win(buf, false, {
+        relative = "cursor",
+        row = 1,
+        col = 0,
+        width = max_width,
+        height = #lines,
+        style = "minimal",
+        border = "rounded",
+        focusable = false,
+    })
+
+    vim.api.nvim_win_set_option(win, "wrap", true)
+    vim.api.nvim_win_set_option(win, "linebreak", true)
+
+    local source_buf = vim.api.nvim_get_current_buf()
+    local close = function()
+        if vim.api.nvim_win_is_valid(win) then
+            vim.api.nvim_win_close(win, true)
+        end
+    end
+
+    vim.api.nvim_create_autocmd({ "CursorMoved", "InsertEnter", "BufLeave" }, {
+        buffer = source_buf,
+        once = true,
+        callback = close,
+    })
+
+    -- Bind <Esc> on the source buffer so it's actually received
+    vim.keymap.set("n", "<Esc>", function()
+        close()
+        vim.keymap.del("n", "<Esc>", { buffer = source_buf })
+    end, { buffer = source_buf, noremap = true, silent = true })
+end, { noremap = true, silent = true, desc = "Show diagnostic popup" })
