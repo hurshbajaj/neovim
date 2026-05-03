@@ -1,4 +1,3 @@
--- Set leader key first
 vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
 vim.g.mapleader = " "
 
@@ -50,7 +49,7 @@ local plugins = {
 	},
 	{ "wakatime/vim-wakatime", lazy = false },
     {
-        "cocopon/iceberg.vim",
+        "metalelf0/base16-black-metal-scheme",
         lazy = false,
         priority = 1000,
     },
@@ -60,7 +59,6 @@ local plugins = {
             require('nvim-rooter').setup()
         end
     },
-    -- Add Telescope
     {
         'nvim-telescope/telescope.nvim',
         dependencies = { 
@@ -96,7 +94,6 @@ local plugins = {
                 extensions = {
                     ["ui-select"] = {
                         require("telescope.themes").get_dropdown({
-                            -- Configure dropdown theme
                             winblend = 10,
                             previewer = false,
                             prompt_title = false,
@@ -109,7 +106,6 @@ local plugins = {
                     }
                 }
             })
-            -- Load the ui-select extension
             require("telescope").load_extension("ui-select")
         end
     },
@@ -267,13 +263,12 @@ local plugins = {
 
 require("lazy").setup(plugins, {})
 
-vim.cmd.colorscheme("iceberg")
+vim.cmd.colorscheme("base16-black-metal")
 
--- Configure lualine with Iceberg theme
 require("lualine").setup({
     options = {
         icons_enabled = true,
-        theme = "iceberg_dark",
+        theme = "Bathory",
         component_separators = { left = "", right = "" },
         section_separators = { left = "", right = "" },
         always_show_tabline = true,
@@ -330,7 +325,6 @@ lsp.emmet_ls.setup({
     filetypes = { "html", "css", "javascript", "javascriptreact", "typescriptreact" }
 })
 
--- OCaml LSP setup with proper configuration
 lsp.ocamllsp.setup({
     capabilities = capabilities,
     cmd = { "ocamllsp" },
@@ -387,14 +381,8 @@ vim.keymap.set("n", "\\", ":Neotree toggle<CR>", { noremap = true, silent = true
 vim.env.RUST_BACKTRACE = "1"
 vim.env.RA_LOG = "error"
 
--- =========================
--- Delete behavior
--- =========================
-vim.keymap.set("v", "D", '"_D', { noremap = true })       -- Only D deletes to EOL without yankin
+vim.keymap.set("v", "D", '"_D', { noremap = true })
 
--- ==============================
--- Markdown Support
--- ==============================
 vim.api.nvim_create_user_command('Md', function()
     if vim.bo.filetype == 'markdown' then
         vim.cmd('MarkdownPreview')
@@ -403,11 +391,6 @@ vim.api.nvim_create_user_command('Md', function()
     end
 end, { desc = 'Open markdown preview' })
 
--- ==============
--- Telescope Pickers with Dropdown Theme
--- ==============
-
--- File picker using Telescope dropdown
 vim.keymap.set('n', '<C-p>', function()
     require('telescope.builtin').find_files(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -434,7 +417,6 @@ vim.keymap.set('n', '<Esc><CR>', function()
     }))
 end, { noremap = true, silent = true })
 
--- Buffer picker using Telescope dropdown
 vim.keymap.set('n', '<Esc><Space>', function()
     require('telescope.builtin').buffers(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -450,11 +432,9 @@ vim.keymap.set('n', '<Esc><Space>', function()
     }))
 end, { noremap = true, silent = true })
 
--- Function picker using Telescope dropdown with OCaml support
 local function pick_functions()
     local filetype = vim.bo.filetype
     
-    -- For OCaml, show variables (let bindings are reported as variables)
     if filetype == "ocaml" or filetype == "ocaml.interface" or filetype == "ocaml.menhir" then
         require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
             winblend = 10,
@@ -468,7 +448,6 @@ local function pick_functions()
             },
         }))
     else
-        -- For other languages, filter to functions and methods
         require('telescope.builtin').lsp_document_symbols(require('telescope.themes').get_dropdown({
             winblend = 10,
             previewer = false,
@@ -485,7 +464,6 @@ end
 
 vim.keymap.set("n", "<Esc>;", pick_functions, { noremap = true, silent = true })
 
--- LSP References using Telescope dropdown
 vim.keymap.set('n', 'gr', function()
     require('telescope.builtin').lsp_references(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -500,7 +478,6 @@ vim.keymap.set('n', 'gr', function()
     }))
 end, { noremap = true, silent = true })
 
--- LSP Definitions using Telescope dropdown
 vim.keymap.set('n', 'gd', function()
     require('telescope.builtin').lsp_definitions(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -516,42 +493,29 @@ vim.keymap.set('n', 'gd', function()
     }))
 end, { noremap = true, silent = true })
 
--- esc + enter >> for all files
--- esc + space >> buffer
--- esc + ; >> functions
 vim.opt.fillchars = { vert = '│' }
 
--- Suppress specific OCaml LSP messages
 local original_notify = vim.notify
 vim.notify = function(msg, log_level, opts)
-    -- Suppress ocamlformat-rpc warning
     if msg and (msg:match("ocamlformat%-rpc") or msg:match("ocamlformat'")) then
         return
     end
 
-    -- Otherwise, show normally
     original_notify(msg, log_level, opts)
 end
 
--- Override LSP message handler to suppress ocamlformat warnings
 vim.lsp.handlers["window/showMessage"] = function(err, result, ctx, config)
-    -- Suppress ocamlformat-rpc messages
     if result and result.message and (result.message:match("ocamlformat%-rpc") or result.message:match("ocamlformat'")) then
         return
     end
     
-    -- Use default handler for other messages
     vim.notify(result.message, result.type)
 end
 
--- ==============================
--- Custom :Rename command
--- ==============================
 vim.api.nvim_create_user_command("Rename", function()
     vim.lsp.buf.rename()
 end, { desc = "LSP Rename symbol" })
 
--- :FIND command - interactive project-wide search
 vim.api.nvim_create_user_command('FIND', function()
     require('telescope.builtin').live_grep(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -565,7 +529,6 @@ vim.api.nvim_create_user_command('FIND', function()
     }))
 end, { desc = 'Search in project' })
 
--- :Find command - interactive search in current buffer
 vim.api.nvim_create_user_command('Find', function()
     require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown({
         winblend = 10,
@@ -600,7 +563,6 @@ vim.keymap.set("n", "<CR>", function()
     require("notify").dismiss({ silent = true, pending = true })
 end, { noremap = true, silent = true })
 vim.opt.statuscolumn = "  %s%=%{v:relnum?v:relnum:v:lnum} %#Normal#  "
--- vim.opt.statuscolumn = "  %s%=%{v:relnum} %#Normal#  "
 vim.opt.relativenumber = true
 
 vim.opt.statuscolumn = "  %s%=%{v:relnum?v:relnum:v:lnum} %#Normal#  "
@@ -616,9 +578,6 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })
 
--- ==============================
--- Inline diagnostic popup on 'e'
--- ==============================
 vim.keymap.set("n", "e", function()
     local diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
     if #diagnostics == 0 then return end
@@ -687,9 +646,16 @@ vim.keymap.set("n", "e", function()
         callback = close,
     })
 
-    -- Bind <Esc> on the source buffer so it's actually received
     vim.keymap.set("n", "<Esc>", function()
         close()
         vim.keymap.del("n", "<Esc>", { buffer = source_buf })
     end, { buffer = source_buf, noremap = true, silent = true })
 end, { noremap = true, silent = true, desc = "Show diagnostic popup" })
+
+vim.cmd.colorscheme("base16-black-metal")
+vim.opt.termguicolors = true
+vim.api.nvim_set_hl(0, "Normal", { bg = "#0d0d0d" })
+vim.api.nvim_set_hl(0, "NormalNC", { bg = "#0d0d0d" })
+
+vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { fg = "#444444" })
+vim.api.nvim_set_hl(0, "NoiceCmdlinePopupTitle", { fg = "#444444" })
