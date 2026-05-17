@@ -44,6 +44,26 @@ local plugins = {
 		  messages = {
 			enabled = true,
 		  },
+		  notify = {
+			view = "mini",
+		  },
+		  views = {
+			mini = {
+			  win_options = { winblend = 0 },
+			  position = { row = -2, col = "100%" },
+			  border = { style = "none" },
+			},
+		  },
+		  routes = {
+			{
+			  filter = { event = "notify" },
+			  view = "mini",
+			},
+			{
+			  filter = { event = "msg_show", kind = "" },
+			  view = "mini",
+			},
+		  },
 		})
 	  end,
 	},
@@ -659,3 +679,5 @@ vim.api.nvim_set_hl(0, "NormalNC", { bg = "#0d0d0d" })
 
 vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { fg = "#444444" })
 vim.api.nvim_set_hl(0, "NoiceCmdlinePopupTitle", { fg = "#444444" })
+
+vim.api.nvim_set_hl(0, "ErrorMsg", { fg = "#cc6666", bg = "#0d0d0d" })
