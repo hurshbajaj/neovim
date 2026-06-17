@@ -50,19 +50,17 @@ local plugins = {
 		  views = {
 			mini = {
 			  win_options = { winblend = 0 },
-			  position = { row = -2, col = "100%" },
+			  position = { row = -2, col = "97%" },
 			  border = { style = "none" },
 			},
 		  },
 		  routes = {
-			{
-			  filter = { event = "notify" },
-			  view = "mini",
-			},
-			{
-			  filter = { event = "msg_show", kind = "" },
-			  view = "mini",
-			},
+			{ filter = { event = "notify" }, view = "mini" },
+			{ filter = { event = "msg_show", kind = "" }, view = "mini" },
+			{ filter = { event = "msg_show", kind = "emsg" }, view = "mini" },
+			{ filter = { event = "msg_show", kind = "wmsg" }, view = "mini" },
+			{ filter = { error = true }, view = "mini" },
+			{ filter = { warning = true }, view = "mini" },
 		  },
 		})
 	  end,
@@ -213,41 +211,64 @@ local plugins = {
             "rafamadriz/friendly-snippets",
         },
     },
-    {
-        "hrsh7th/nvim-cmp",
-        config = function()
-            local cmp = require("cmp")
-            require("luasnip.loaders.from_vscode").lazy_load()
-            cmp.setup({
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body)
-                    end,
-                },
-                window = {
-                    completion = cmp.config.window.bordered(),
-                    documentation = cmp.config.window.bordered(),
-                },
-                mapping = cmp.mapping.preset.insert({
-                    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-                    ["<C-f>"] = cmp.mapping.scroll_docs(4),
-                    ["<C-Space>"] = cmp.mapping.complete(),
-                    ["<C-e>"] = cmp.mapping.abort(),
-                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
-                }),
-                sources = cmp.config.sources({
-                    { name = "nvim_lsp" },
-                    { name = "luasnip" },
-                }, {
-                    { name = "buffer" },
-                }),
-                preselect = cmp.PreselectMode.Item,
+{
+    "hrsh7th/nvim-cmp",
+    config = function()
+        local cmp = require("cmp")
+        require("luasnip.loaders.from_vscode").lazy_load()
+
+        local kind_icons = {
+            Text = "󰉿 ", Method = "󰆧 ", Function = "󰊕 ", Constructor = " ",
+            Field = "󰜢 ", Variable = "󰀫 ", Class = "󰠱 ", Interface = " ",
+            Module = " ", Property = "󰜢 ", Unit = "󰑭 ", Value = "󰎠 ",
+            Enum = " ", Keyword = "󰌋 ", Snippet = " ", Color = "󰏘 ",
+            File = "󰈙 ", Reference = "󰈇 ", Folder = "󰉋 ", EnumMember = " ",
+            Constant = "󰏿 ", Struct = "󰙅 ", Event = " ", Operator = "󰆕 ",
+            TypeParameter = "󰊄 ",
+        }
+
+        cmp.setup({
+            snippet = {
+                expand = function(args)
+                    require("luasnip").lsp_expand(args.body)
+                end,
+            },
+            window = {
                 completion = {
-                    completeopt = "menu,menuone,noinsert"
+                    border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+                    -- We link CmpMenu to Pmenu, and FloatBorder to CmpMenuBorder
+                    winhighlight = "Normal:Pmenu,FloatBorder:CmpMenuBorder,CursorLine:PmenuSel,Search:None",
                 },
-            })
-        end,
-    },
+                documentation = cmp.config.disable,
+            },
+            formatting = {
+                fields = { "kind", "abbr" },
+                format = function(entry, vim_item)
+                    vim_item.kind = kind_icons[vim_item.kind] or ""
+                    return vim_item
+                end,
+            },
+            mapping = cmp.mapping.preset.insert({
+                ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+                ["<C-f>"] = cmp.mapping.scroll_docs(4),
+                ["<C-Space>"] = cmp.mapping.complete(),
+                ["<C-e>"] = cmp.mapping.abort(),
+                ["<CR>"] = cmp.mapping.confirm({ select = true }),
+			}),
+            sources = cmp.config.sources({
+                { name = "nvim_lsp" },
+                { name = "luasnip" },
+            }, {
+                { name = "buffer" },
+            }),
+            -- This explicitly forces the first option to be selected immediately
+            preselect = cmp.PreselectMode.Item,
+            completion = {
+                completeopt = "menu,menuone,noinsert",
+            },
+        })
+    end,
+},
     {
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate",
@@ -681,3 +702,64 @@ vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { fg = "#444444" })
 vim.api.nvim_set_hl(0, "NoiceCmdlinePopupTitle", { fg = "#444444" })
 
 vim.api.nvim_set_hl(0, "ErrorMsg", { fg = "#cc6666", bg = "#0d0d0d" })
+
+-- Colorscheme variables
+local orange_hex = "#ee7967"
+local bg_hex = "#0d0d0d"
+local white_hex = "#ffffff"
+local selection_bg_hex = "#252525" -- Subtle dark charcoal for the active row
+
+-- 1. Style the Border (Stays Orange)
+vim.api.nvim_set_hl(0, "CmpMenuBorder", { fg = orange_hex, bg = bg_hex })
+
+-- 2. Style the Suggestion Menu Inside Components
+vim.api.nvim_set_hl(0, "Pmenu", { fg = white_hex, bg = bg_hex })         -- Fallback text to white
+vim.api.nvim_set_hl(0, "CmpItemAbbr", { fg = white_hex, bg = bg_hex })   -- Text options are white
+vim.api.nvim_set_hl(0, "CmpItemKind", { fg = orange_hex, bg = bg_hex })   -- Symbols/icons are orange
+
+-- 3. New Selection Style: Dark gray background, Orange text/icon focus
+vim.api.nvim_set_hl(0, "PmenuSel", { bg = selection_bg_hex })
+
+-- =====================================================================
+-- Custom Theme Overrides (Borders, Autocomplete, & Telescope)
+-- =====================================================================
+local orange_hex = "#ee7967"
+local bg_hex = "#0d0d0d"
+local white_hex = "#ffffff"
+local selection_bg_hex = "#252525" 
+
+local function apply_custom_theme()
+    -- 1. Nvim-Cmp (Autocomplete) Styles
+    vim.api.nvim_set_hl(0, "CmpMenuBorder", { fg = orange_hex, bg = bg_hex })
+    vim.api.nvim_set_hl(0, "Pmenu", { fg = white_hex, bg = bg_hex })         
+    vim.api.nvim_set_hl(0, "CmpItemAbbr", { fg = white_hex, bg = bg_hex })   
+    vim.api.nvim_set_hl(0, "CmpItemKind", { fg = orange_hex, bg = bg_hex })  
+
+    -- Hover behavior: ONLY background shifts, text remains white & icon remains orange
+    vim.api.nvim_set_hl(0, "PmenuSel", { bg = selection_bg_hex, fg = white_hex })       
+    vim.api.nvim_set_hl(0, "CmpItemAbbrSel", { bg = selection_bg_hex, fg = white_hex }) 
+    vim.api.nvim_set_hl(0, "CmpItemKindSel", { bg = selection_bg_hex, fg = orange_hex }) 
+
+    -- Prevent typing matches from breaking the text colors
+    vim.api.nvim_set_hl(0, "CmpItemAbbrMatch", { fg = white_hex, bg = bg_hex, bold = true })
+    vim.api.nvim_set_hl(0, "CmpItemAbbrMatchSel", { fg = white_hex, bg = selection_bg_hex, bold = true })
+
+    -- 2. Telescope Picker Styles (Esc ;, Esc Space, C-p, C-a)
+    vim.api.nvim_set_hl(0, "TelescopeBorder", { fg = orange_hex, bg = bg_hex })
+    vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = orange_hex, bg = bg_hex })
+    vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = orange_hex, bg = bg_hex })
+    vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = orange_hex, bg = bg_hex })
+    vim.api.nvim_set_hl(0, "TelescopeSelection", { bg = selection_bg_hex, fg = white_hex })
+end
+
+-- Run immediately on boot
+apply_custom_theme()
+
+-- Re-run if colorscheme updates to prevent it from wiping our overrides
+vim.api.nvim_create_autocmd("ColorScheme", {
+    pattern = "*",
+    callback = apply_custom_theme,
+})
+
+-- Forces the '>' inside the input/prompt bar to be flat white
+    vim.api.nvim_set_hl(0, "TelescopePromptPrefix", { fg = white_hex, bg = bg_hex })
